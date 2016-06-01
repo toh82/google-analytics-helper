@@ -12,16 +12,32 @@
      * - data-ga-label     ga event label
      * - data-ga-value     ga event value
      *
-     * example:
-     * <button data-ga-track data-ga-event="click" data-ga-category="category" data-ga-action="action" data-ga-label="label" data-ga-value="value">mouseover</button>
+     * example for data attributes:
+     * <button data-ga-track data-ga-event="click" data-ga-category="category" data-ga-action="action" data-ga-label="label" data-ga-value="value">click button</button>
+     *
+     * example for javascript:
+     * The third parameter defines if the event should be directly bound, this should be set
+     * to `false` if the element should just be added to the list of trackables and the .init()
+     * is executed after the building the trackable.
+     * gaTrackables.buildTrackableElement($('.element'), {
+     *     gaEvent: 'click',
+     *     gaCategory: 'category',
+     *     gaAction: 'action'
+     * }, true);
      */
     var gaTrackables = (function () {
 
         /** var {boolean} isConsoleActivated */
         var isConsoleActivated = false;
 
+        /** var {boolean} logOutputOnly */
+        var isLogOutputOnlyActivated = false;
+
         /** var {boolean} isDebugActive */
-        var isDebugActive = false;
+        var isDebugActivated = false;
+
+        /** var {object} trackables */
+        var trackables = null;
 
         /**
          * @param {string|undefined} trackableDataItem
@@ -37,7 +53,7 @@
          * @private
          */
         debug = function (message, data) {
-            if (isConsoleActivated && isDebugActive) {
+            if (isConsoleActivated && isDebugActivated) {
                 console.log(message, data);
             }
         };
@@ -50,13 +66,19 @@
 
             debug('trackable data: ', trackableData);
 
-            _gaq.push([
+            var eventData = [
                 '_trackEvent',
                 trackableData.gaCategory,
                 trackableData.gaAction,
                 trackableData.gaLabel || null,
                 trackableData.gaValue || null
-            ]);
+            ];
+
+            if (isLogOutputOnlyActivated) {
+            	console.log(eventData);
+            } else {
+            	_gaq.push(eventData);
+            }
         };
 
         /**
@@ -64,6 +86,8 @@
          * @private
          */
         bindTrackable = function ($trackable) {
+            debug('current trackable: ', $trackable);
+
             var trackableData  = $trackable.data(),
                 trackableEvent = trackableData.gaEvent;
 
@@ -88,14 +112,17 @@
         return {
             /**
              * @param {boolean} debug
+             * @param {boolean} logOnly
              * @public
              */
-            init: function (debug) {
-                isConsoleActivated = (window.console) ? true : false;
-                isDebugActive      = debug;
+            init: function (debugMode, logOnly) {
+                isConsoleActivated 	     = (window.console) ? true : false;
+                isDebugActivated         = debugMode;
+                isLogOutputOnlyActivated = logOnly;
 
-                /** var {object} trackables */
-                var trackables = $('*[data-ga-track]');
+                trackables = $('*[data-ga-track]');
+                debug('trackables: ', trackables);
+
                 $.each(trackables, function () {
                     bindTrackable($(this));
                 });
@@ -104,18 +131,26 @@
             /**
              * @param {object} $element
              * @param {object} config
+             * @param {boolean} bindDirectly
              * @public
              */
-            buildTrackable: function ($element, config) {
+            buildTrackableElement: function ($element, config, bindDirectly) {
+                debug('to build trackable: ', $element, config);
+
                 $element.data(config);
-                bindTrackable($element);
+                trackables.push($element[0]);
+
+                if (bindDirectly) {
+                	bindTrackable($element);
+                }
             }
         };
     })();
 
     $(document).ready(function () {
-        if (typeof _gaq !== 'undefined') {
-            gaTrackables.init(false);
-        }
+        gaTrackables.init(
+            false,
+            typeof _gaq === 'undefined'
+        );
     });
 })(jQuery);

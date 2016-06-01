@@ -10,7 +10,7 @@ Checks on elements for data attributes and pushes them to google analytics
 - `data-ga-label`     ga event label
 - `data-ga-value`     ga event value
 
-## Example
+## Example for data attributes
 
 ```
 <button data-ga-track
@@ -22,6 +22,18 @@ Checks on elements for data attributes and pushes them to google analytics
           click-tracker
 </button>
 ```
+
+## Example for jQuery binding
+
+```
+gaTrackables.buildTrackableElement($('.element'), {
+   gaEvent: 'click',
+   gaCategory: 'category',
+   gaAction: 'action'
+}, true);
+```
+
+The third parameter defines if the event should directly be bound, it should be set to `false` if the element should only be added to the list of trackables and `.init()` is executed afterwards.
 
 ## License
 
